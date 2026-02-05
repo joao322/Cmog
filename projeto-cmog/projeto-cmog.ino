@@ -13,9 +13,10 @@ Servo radar;
 byte poicao_inicial = 90;
 
 int lista[9] = { 30, 45, 60, 75, 90, 105, 120, 135, 150 };
-int distancia_obistaculos[9] = {};
+int distancia_obistaculos[10] = {};
 char modo = "R";
 
+byte distanciaMinima = 25;
 
 void setup() {
   pinMode(motorESQ_1, OUTPUT);
@@ -34,12 +35,16 @@ void setup() {
   Serial.println(" para fazer teste do hardware [T]\n para receber os valores da leitura [A]");
 
 }
+
+
 void mensagem() {
   Serial.println("--------------------------");
   Serial.println("(S) mais o numero para mover o servo (s90)\n M fazer os motores roda de -250 a 250 (M150)");
   Serial.println(" Md para dora o motor direito -250 a 250 (Md150)\n Me para rodar o motor esquerdo -250 a 250(Me150)");
   Serial.println(" L para deltura do hc (L1) uma leitura (Ll) leitura loop");
 }
+
+
 void teste() {
   String entrada;
   mensagem();
@@ -189,10 +194,21 @@ void leitura(int pos) {
   distancia_obistaculos[pos] = duracao / 58;
 }
 
+void tt(int atraso, byte pos){
+  long tempoInte = millis();
+  while ( tempoInte - millis() >= atraso){
+    leitura(9);
+    int dadoLeitura = distancia_obistaculos[9];
+    if (distanciaMinima <  dadoLeitura){
+      if (pos == 0)  distancia_obistaculos[0] = dadoLeitura;
+      else  distancia_obistaculos[pos - 1] = dadoLeitura;
+    }
+  }
+}
 void sona() {
   for (int i = 0; i < 9; i++) {
     radar.write(lista[i]);
-    delay(60);
+    tt(60, i);
     leitura(i);
     if (i == 1 && radar.read() > 50){
       analogWrite(motorESQ_1, 255);
@@ -201,7 +217,7 @@ void sona() {
       analogWrite(motorDIR_1, 255);
       analogWrite(motorDIR_2, LOW);
       delay(200);
-    }else if (i == 8 && radar.read() < 130){
+    }else if (i == 7 && radar.read() < 130){
       analogWrite(motorESQ_1, 255);
       analogWrite(motorESQ_2, LOW);
 
@@ -212,8 +228,11 @@ void sona() {
   }
 }
 
+
+
+
 void algoritimo() {
-  byte distanciaMinima = 25;
+  
   // mostra os dados da leitura no monitor serial
   if (modo == 'A') {
     Serial.print("dados da leitura ");
